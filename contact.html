@@ -11,10 +11,6 @@
     
     <!-- Favicon -->
     
-    
-    <!-- Google Translate - Hidden Element -->
-    <meta name="google-translate-customization" content=""/>
-    
     <!-- Tailwind CSS via CDN (for development) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -112,18 +108,6 @@
 
 </head>
 <body class="font-sans antialiased text-gray-800 bg-white">
-    <!-- Translation Loading Overlay -->
-    <div id="translation-loader" class="hidden fixed inset-0 bg-white z-[9999] items-center justify-center">
-        <div class="text-center">
-            <div class="relative w-16 h-16 mx-auto mb-4">
-                <!-- Spinner -->
-                <div class="absolute inset-0 border-4 border-gray-200 rounded-full"></div>
-                <div class="absolute inset-0 border-4 border-orange-500 rounded-full border-t-transparent animate-spin"></div>
-            </div>
-            <p class="text-gray-600 font-medium" id="loader-text">Translating...</p>
-            <p class="text-gray-400 text-sm mt-1" id="loader-subtext">در حال ترجمه... | ژباړه کېږي...</p>
-        </div>
-    </div>
     
     <!-- Header/Navigation -->
     
@@ -603,171 +587,39 @@ document.addEventListener('DOMContentLoaded', function() {
     <!-- Scripts -->
     <script src="static/js/main.js"></script>
     
-    <!-- Google Translate Script -->
+    <!-- Clean Language Switcher Script -->
     <script type="text/javascript">
-        // Initialize Google Translate
-        function googleTranslateElementInit() {
-            new google.translate.TranslateElement({
-                pageLanguage: 'en',
-                includedLanguages: 'en,fa,ps,zh-CN',
-                autoDisplay: false,
-                layout: google.translate.TranslateElement.InlineLayout.SIMPLE
-            }, 'google_translate_element');
-            
-            window.googleTranslateLoaded = true;
-            console.log('Google Translate initialized');
-            
-            // Apply saved language after Google Translate loads
-            setTimeout(function() {
-                const savedLang = localStorage.getItem('helixLang');
-                if (savedLang && savedLang !== 'en') {
-                    applyGoogleTranslate(savedLang);
-                }
-            }, 500);
-        }
-        
-        // Apply Google Translate for a specific language
-        function applyGoogleTranslate(langCode) {
-            const langMap = { 'en': 'en', 'fa': 'fa', 'ps': 'ps', 'zh': 'zh-CN' };
-            const googleLang = langMap[langCode] || langCode;
-            
-            // Try to find the Google Translate dropdown
-            const maxAttempts = 20;
-            let attempts = 0;
-            
-            const tryApply = function() {
-                const select = document.querySelector('.goog-te-combo');
-                if (select) {
-                    select.value = googleLang;
-                    select.dispatchEvent(new Event('change', { bubbles: true }));
-                    console.log('Applied translation:', googleLang);
-                    hideTranslationLoader();
-                } else if (attempts < maxAttempts) {
-                    attempts++;
-                    setTimeout(tryApply, 200);
-                } else {
-                    console.warn('Could not find Google Translate dropdown');
-                    hideTranslationLoader();
-                }
-            };
-            
-            tryApply();
-        }
-        
-        // Fix URL if Google Translate added language prefix
-        (function() {
-            const langPrefixes = ['/fa/', '/ps/', '/zh-CN/', '/zh/', '/en/'];
-            const currentPath = window.location.pathname;
-            
-            for (const prefix of langPrefixes) {
-                if (currentPath.startsWith(prefix)) {
-                    const correctPath = currentPath.substring(prefix.length - 1) || '/';
-                    window.location.replace(correctPath + window.location.search + window.location.hash);
-                    break;
-                }
-            }
-        })();
-        
-        // Show translation loading overlay
-        function showTranslationLoader() {
-            const loader = document.getElementById('translation-loader');
-            if (loader) {
-                loader.classList.remove('hidden');
-                loader.classList.add('flex');
-                // Auto-hide after 5 seconds max (safety timeout)
-                setTimeout(hideTranslationLoader, 5000);
-            }
-        }
-        
-        // Hide translation loading overlay
-        function hideTranslationLoader() {
-            const loader = document.getElementById('translation-loader');
-            if (loader) {
-                loader.classList.add('hidden');
-                loader.classList.remove('flex');
-            }
-        }
-        
-        // Function to change language programmatically
+        // Function to change language - RTL support only (no Google Translate)
         function changeLanguage(langCode) {
-            console.log('Changing language to:', langCode);
-            
             // Save language preference
             localStorage.setItem('helixLang', langCode);
             
-            // Map language codes to Google Translate format
-            const langMap = { 'en': 'en', 'fa': 'fa', 'ps': 'ps', 'zh': 'zh-CN' };
-            const googleLang = langMap[langCode] || langCode;
-            
-            // RTL languages (Persian/Farsi and Pashto use Arabic script - right to left)
+            // RTL languages (Persian/Farsi and Pashto)
             const rtlLanguages = ['fa', 'ps'];
             const isRTL = rtlLanguages.includes(langCode);
             
-            // Set text direction on HTML element
-            const htmlElement = document.documentElement;
-            htmlElement.setAttribute('dir', isRTL ? 'rtl' : 'ltr');
-            htmlElement.setAttribute('lang', langCode);
+            // Set text direction
+            document.documentElement.setAttribute('dir', isRTL ? 'rtl' : 'ltr');
+            document.documentElement.setAttribute('lang', langCode);
             
-            // Add/remove RTL class for additional styling
+            // Add/remove RTL class
             if (isRTL) {
                 document.body.classList.add('rtl-mode');
             } else {
                 document.body.classList.remove('rtl-mode');
             }
             
-            // Update UI immediately
+            // Update UI
             updateLanguageUI(langCode);
             
-            // Show loader
-            showTranslationLoader();
-            
-            // Set the googtrans cookie
-            if (langCode === 'en') {
-                // Clear Google Translate cookies for English
-                document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-                document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=' + window.location.hostname;
-                document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.' + window.location.hostname;
-            } else {
-                // Set cookie for target language
-                document.cookie = 'googtrans=/en/' + googleLang + '; path=/';
-                document.cookie = 'googtrans=/en/' + googleLang + '; path=/; domain=.' + window.location.hostname;
-            }
-            
-            // Try to use the Google Translate widget dropdown
-            const tryTranslate = function(attempts) {
-                const select = document.querySelector('.goog-te-combo');
-                if (select) {
-                    if (langCode === 'en') {
-                        select.value = '';
-                        select.dispatchEvent(new Event('change', { bubbles: true }));
-                        setTimeout(function() {
-                            hideTranslationLoader();
-                            window.location.reload();
-                        }, 500);
-                    } else {
-                        select.value = googleLang;
-                        select.dispatchEvent(new Event('change', { bubbles: true }));
-                        setTimeout(hideTranslationLoader, 1500);
-                    }
-                } else if (attempts < 30) {
-                    setTimeout(function() { tryTranslate(attempts + 1); }, 200);
-                } else {
-                    hideTranslationLoader();
-                    window.location.reload();
-                }
-            };
-            
-            tryTranslate(0);
+            // Close dropdown
+            const langDropdown = document.getElementById('lang-dropdown');
+            if (langDropdown) langDropdown.classList.add('hidden');
         }
         
         // Update the language button display
         function updateLanguageUI(langCode) {
-            const langNames = {
-                'en': 'EN',
-                'fa': 'FA',
-                'ps': 'PS',
-                'zh': 'ZH'
-            };
+            const langNames = { 'en': 'EN', 'fa': 'FA', 'ps': 'PS', 'zh': 'ZH' };
             const currentLangSpan = document.getElementById('current-lang');
             if (currentLangSpan) {
                 currentLangSpan.textContent = langNames[langCode] || 'EN';
@@ -799,8 +651,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // On page load - restore saved language preference
         document.addEventListener('DOMContentLoaded', function() {
             const savedLang = localStorage.getItem('helixLang') || 'en';
-            
-            // Set direction based on saved language
             const rtlLanguages = ['fa', 'ps'];
             const isRTL = rtlLanguages.includes(savedLang);
             
@@ -813,56 +663,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.body.classList.remove('rtl-mode');
             }
             
-            // Update UI to show current language
             updateLanguageUI(savedLang);
-            
-            console.log('Page loaded with language:', savedLang);
-            
-            // Check if Google Translate loaded within 10 seconds
-            setTimeout(function() {
-                if (!window.googleTranslateLoaded) {
-                    console.warn('Google Translate failed to load. Translation may not work.');
-                }
-            }, 10000);
         });
+        
+        // Mobile menu toggle
+        function toggleMobileMenu() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            if (mobileMenu) {
+                mobileMenu.classList.toggle('hidden');
+            }
+        }
     </script>
-    <script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" onerror="console.error('Failed to load Google Translate script')"></script>
     
-    <!-- Hide Google Translate Banner + RTL Support -->
+    <!-- RTL Support Styles -->
     <style>
-        /* ===== Translation Loader Animation ===== */
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        .animate-spin {
-            animation: spin 1s linear infinite;
-        }
-        #translation-loader {
-            transition: opacity 0.3s ease;
-        }
-        #translation-loader.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-        #translation-loader:not(.hidden) {
-            opacity: 1;
-        }
-        
-        /* ===== Hide Google Translate UI Completely ===== */
-        .goog-te-banner-frame, .goog-te-balloon-frame { display: none !important; height: 0 !important; }
-        .goog-te-gadget { display: none !important; }
-        #google_translate_element { display: none !important; height: 0 !important; visibility: hidden !important; }
-        body { top: 0 !important; position: static !important; }
-        html { margin-top: 0 !important; }
-        .skiptranslate { display: none !important; height: 0 !important; visibility: hidden !important; }
-        body > .skiptranslate { display: none !important; }
-        .goog-tooltip { display: none !important; }
-        .goog-tooltip:hover { display: none !important; }
-        .goog-text-highlight { background-color: transparent !important; box-shadow: none !important; }
-        iframe.goog-te-banner-frame { display: none !important; height: 0 !important; visibility: hidden !important; }
-        #goog-gt-tt, .goog-te-balloon-frame { display: none !important; }
-        .goog-te-menu-frame { display: none !important; }
-        
         /* ===== RTL (Right-to-Left) Support for Persian/Farsi and Pashto ===== */
         /* Base RTL direction and font */
         [dir="rtl"] {
@@ -1175,10 +989,6 @@ document.addEventListener('DOMContentLoaded', function() {
             to { opacity: 1; transform: translateX(0); }
         }
     </style>
-    
-    <!-- Hidden Google Translate Element -->
-    <div id="google_translate_element" style="display:none;"></div>
-    
     
 <script>
 function copyWeChatID() {
