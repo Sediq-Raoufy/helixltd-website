@@ -837,23 +837,27 @@ document.addEventListener('DOMContentLoaded', function() {
             // Update UI immediately
             updateLanguageUI(langCode);
             
-            // Set Google Translate cookie and reload
+            // Show loader
+            showTranslationLoader();
+            
             if (langCode === 'en') {
-                // Clear Google Translate cookies
+                // For English, clear cookies and go to original site
                 document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
                 document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=' + window.location.hostname;
                 document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.' + window.location.hostname;
+                
+                // Remove any translate frame and reload
+                if (window.location.hostname.includes('translate.goog')) {
+                    window.location.href = 'https://helixltd.co/services.html';
+                } else {
+                    window.location.reload();
+                }
             } else {
-                // Set the googtrans cookie for the selected language
-                const expiry = new Date();
-                expiry.setFullYear(expiry.getFullYear() + 1);
-                document.cookie = 'googtrans=/en/' + googleLang + '; expires=' + expiry.toUTCString() + '; path=/';
-                document.cookie = 'googtrans=/en/' + googleLang + '; expires=' + expiry.toUTCString() + '; path=/; domain=' + window.location.hostname;
+                // Use Google Translate's URL-based translation (more reliable than widget)
+                const currentPage = window.location.href;
+                const translateUrl = 'https://translate.google.com/translate?sl=en&tl=' + googleLang + '&u=' + encodeURIComponent(currentPage);
+                window.location.href = translateUrl;
             }
-            
-            // Reload page to apply translation
-            showTranslationLoader();
-            window.location.reload();
         }
         
         // Update the language button display
