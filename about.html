@@ -641,98 +641,90 @@ document.addEventListener('DOMContentLoaded', function() {
     <!-- Scripts -->
     <script src="static/js/main.js"></script>
     
-    <!-- Clean Language Switcher Script -->
+    <!-- Google Translate Script with Hidden UI -->
     <script type="text/javascript">
-        // Function to change language - RTL support only (no Google Translate)
+        // Initialize Google Translate (hidden)
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'en',
+                includedLanguages: 'en,fa,ps,zh-CN',
+                autoDisplay: false,
+                layout: google.translate.TranslateElement.InlineLayout.SIMPLE
+            }, 'google_translate_element');
+        }
+        
+        // Change language function
         function changeLanguage(langCode) {
-            // Save language preference
             localStorage.setItem('helixLang', langCode);
-            
-            // RTL languages (Persian/Farsi and Pashto)
+            const langMap = { 'en': 'en', 'fa': 'fa', 'ps': 'ps', 'zh': 'zh-CN' };
+            const googleLang = langMap[langCode] || langCode;
             const rtlLanguages = ['fa', 'ps'];
             const isRTL = rtlLanguages.includes(langCode);
             
-            // Set text direction
             document.documentElement.setAttribute('dir', isRTL ? 'rtl' : 'ltr');
             document.documentElement.setAttribute('lang', langCode);
+            if (isRTL) { document.body.classList.add('rtl-mode'); } 
+            else { document.body.classList.remove('rtl-mode'); }
             
-            // Add/remove RTL class
-            if (isRTL) {
-                document.body.classList.add('rtl-mode');
-            } else {
-                document.body.classList.remove('rtl-mode');
-            }
-            
-            // Update UI
             updateLanguageUI(langCode);
-            
-            // Close dropdown
             const langDropdown = document.getElementById('lang-dropdown');
             if (langDropdown) langDropdown.classList.add('hidden');
+            
+            if (langCode === 'en') {
+                document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+                document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.' + location.hostname;
+                setTimeout(() => location.reload(), 100);
+            } else {
+                document.cookie = 'googtrans=/en/' + googleLang + '; path=/';
+                document.cookie = 'googtrans=/en/' + googleLang + '; path=/; domain=.' + location.hostname;
+                const tryTranslate = (attempts) => {
+                    const select = document.querySelector('.goog-te-combo');
+                    if (select) { select.value = googleLang; select.dispatchEvent(new Event('change', { bubbles: true })); }
+                    else if (attempts < 50) { setTimeout(() => tryTranslate(attempts + 1), 100); }
+                    else { location.reload(); }
+                };
+                tryTranslate(0);
+            }
         }
         
-        // Update the language button display
         function updateLanguageUI(langCode) {
             const langNames = { 'en': 'EN', 'fa': 'FA', 'ps': 'PS', 'zh': 'ZH' };
             const currentLangSpan = document.getElementById('current-lang');
-            if (currentLangSpan) {
-                currentLangSpan.textContent = langNames[langCode] || 'EN';
-            }
-            
-            // Update active states in dropdown
+            if (currentLangSpan) currentLangSpan.textContent = langNames[langCode] || 'EN';
             document.querySelectorAll('.lang-option').forEach(btn => {
-                if (btn.dataset.lang === langCode) {
-                    btn.classList.add('text-orange-500', 'font-medium');
-                    btn.classList.remove('text-gray-700');
-                } else {
-                    btn.classList.remove('text-orange-500', 'font-medium');
-                    btn.classList.add('text-gray-700');
-                }
+                if (btn.dataset.lang === langCode) { btn.classList.add('text-orange-500', 'font-medium'); btn.classList.remove('text-gray-700'); }
+                else { btn.classList.remove('text-orange-500', 'font-medium'); btn.classList.add('text-gray-700'); }
             });
-            
-            // Update mobile buttons
             document.querySelectorAll('.lang-btn-mobile').forEach(btn => {
-                if (btn.dataset.lang === langCode) {
-                    btn.classList.add('bg-orange-500', 'text-white');
-                    btn.classList.remove('bg-gray-100', 'text-gray-700');
-                } else {
-                    btn.classList.remove('bg-orange-500', 'text-white');
-                    btn.classList.add('bg-gray-100', 'text-gray-700');
-                }
+                if (btn.dataset.lang === langCode) { btn.classList.add('bg-orange-500', 'text-white'); btn.classList.remove('bg-gray-100', 'text-gray-700'); }
+                else { btn.classList.remove('bg-orange-500', 'text-white'); btn.classList.add('bg-gray-100', 'text-gray-700'); }
             });
         }
         
-        // On page load - restore saved language preference
         document.addEventListener('DOMContentLoaded', function() {
             const savedLang = localStorage.getItem('helixLang') || 'en';
             const rtlLanguages = ['fa', 'ps'];
             const isRTL = rtlLanguages.includes(savedLang);
-            
             document.documentElement.setAttribute('dir', isRTL ? 'rtl' : 'ltr');
             document.documentElement.setAttribute('lang', savedLang);
-            
-            if (isRTL) {
-                document.body.classList.add('rtl-mode');
-            } else {
-                document.body.classList.remove('rtl-mode');
-            }
-            
+            if (isRTL) { document.body.classList.add('rtl-mode'); } else { document.body.classList.remove('rtl-mode'); }
             updateLanguageUI(savedLang);
         });
         
-        // Mobile menu toggle
-        function toggleMobileMenu() {
-            const mobileMenu = document.getElementById('mobile-menu');
-            if (mobileMenu) {
-                mobileMenu.classList.toggle('hidden');
-            }
-        }
+        function toggleMobileMenu() { const m = document.getElementById('mobile-menu'); if (m) m.classList.toggle('hidden'); }
+        function removeGoogleBanner() { const b = document.querySelector('.goog-te-banner-frame'); if (b) b.style.display = 'none'; document.body.style.top = '0px'; }
+        setInterval(removeGoogleBanner, 100);
     </script>
+    <script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
     
-    <!-- RTL Support Styles -->
+    <!-- RTL Support + Hide Google Translate UI -->
     <style>
+        .goog-te-banner-frame, .goog-te-balloon-frame, #goog-gt-tt, .goog-te-menu-frame, .goog-te-gadget, #google_translate_element, .skiptranslate, .goog-tooltip { display: none !important; visibility: hidden !important; height: 0 !important; }
+        body { top: 0 !important; position: static !important; }
+        html { margin-top: 0 !important; }
+        .goog-text-highlight { background-color: transparent !important; box-shadow: none !important; }
         
-        /* ===== RTL (Right-to-Left) Support for Persian/Farsi and Pashto ===== */
+        /* ===== RTL (Right-to-Left) Support for Persian/Farsi and Pashto ===== */ */
         /* Base RTL direction and font */
         [dir="rtl"] {
             font-family: 'Vazirmatn', 'Inter', system-ui, sans-serif;
@@ -1044,6 +1036,8 @@ document.addEventListener('DOMContentLoaded', function() {
             to { opacity: 1; transform: translateX(0); }
         }
     </style>
+    
+    <div id="google_translate_element"></div>
     
 </body>
 </html>

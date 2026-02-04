@@ -968,22 +968,35 @@ document.addEventListener('DOMContentLoaded', function() {
     <!-- Scripts -->
     <script src="static/js/main.js"></script>
     
-    <!-- Language Switcher Script (Clean - No Google Translate) -->
+    <!-- Google Translate Script with Hidden UI -->
     <script type="text/javascript">
-        // Simple language preference (for RTL direction support)
+        // Initialize Google Translate (hidden)
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'en',
+                includedLanguages: 'en,fa,ps,zh-CN',
+                autoDisplay: false,
+                layout: google.translate.TranslateElement.InlineLayout.SIMPLE
+            }, 'google_translate_element');
+        }
+        
+        // Change language function
         function changeLanguage(langCode) {
             // Save language preference
             localStorage.setItem('helixLang', langCode);
             
-            // RTL languages (Persian/Farsi and Pashto use Arabic script - right to left)
+            // Map our language codes to Google Translate codes
+            const langMap = { 'en': 'en', 'fa': 'fa', 'ps': 'ps', 'zh': 'zh-CN' };
+            const googleLang = langMap[langCode] || langCode;
+            
+            // RTL languages
             const rtlLanguages = ['fa', 'ps'];
             const isRTL = rtlLanguages.includes(langCode);
             
-            // Set text direction on HTML element
+            // Set text direction
             document.documentElement.setAttribute('dir', isRTL ? 'rtl' : 'ltr');
             document.documentElement.setAttribute('lang', langCode);
             
-            // Add/remove RTL class for additional styling
             if (isRTL) {
                 document.body.classList.add('rtl-mode');
             } else {
@@ -996,16 +1009,45 @@ document.addEventListener('DOMContentLoaded', function() {
             // Close dropdown
             const langDropdown = document.getElementById('lang-dropdown');
             if (langDropdown) langDropdown.classList.add('hidden');
+            
+            // Apply Google Translate
+            if (langCode === 'en') {
+                // Reset to English - remove translation
+                const iframe = document.querySelector('.goog-te-banner-frame');
+                if (iframe) {
+                    const innerDoc = iframe.contentDocument || iframe.contentWindow.document;
+                    const restoreBtn = innerDoc.querySelector('.goog-te-banner-content button');
+                    if (restoreBtn) restoreBtn.click();
+                }
+                // Also try via cookie
+                document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+                document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.' + location.hostname;
+                setTimeout(() => location.reload(), 100);
+            } else {
+                // Set translation cookie and trigger
+                document.cookie = 'googtrans=/en/' + googleLang + '; path=/';
+                document.cookie = 'googtrans=/en/' + googleLang + '; path=/; domain=.' + location.hostname;
+                
+                // Try to trigger translation via the hidden select
+                const tryTranslate = (attempts) => {
+                    const select = document.querySelector('.goog-te-combo');
+                    if (select) {
+                        select.value = googleLang;
+                        select.dispatchEvent(new Event('change', { bubbles: true }));
+                    } else if (attempts < 50) {
+                        setTimeout(() => tryTranslate(attempts + 1), 100);
+                    } else {
+                        // Fallback: reload with cookie set
+                        location.reload();
+                    }
+                };
+                tryTranslate(0);
+            }
         }
         
         // Update the language button display
         function updateLanguageUI(langCode) {
-            const langNames = {
-                'en': 'EN',
-                'fa': 'FA',
-                'ps': 'PS',
-                'zh': 'ZH'
-            };
+            const langNames = { 'en': 'EN', 'fa': 'FA', 'ps': 'PS', 'zh': 'ZH' };
             const currentLangSpan = document.getElementById('current-lang');
             if (currentLangSpan) {
                 currentLangSpan.textContent = langNames[langCode] || 'EN';
@@ -1037,8 +1079,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // On page load - restore saved language preference
         document.addEventListener('DOMContentLoaded', function() {
             const savedLang = localStorage.getItem('helixLang') || 'en';
-            
-            // Set direction based on saved language
             const rtlLanguages = ['fa', 'ps'];
             const isRTL = rtlLanguages.includes(savedLang);
             
@@ -1051,22 +1091,72 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.body.classList.remove('rtl-mode');
             }
             
-            // Update UI to show current language
             updateLanguageUI(savedLang);
         });
-    </script>
-    
-    <!-- RTL Support Styles -->
-    <style>
-        /* ===== Translation Loader Animation ===== */
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        .animate-spin {
-            animation: spin 1s linear infinite;
+        
+        // Remove Google Translate toolbar on load
+        function removeGoogleBanner() {
+            const banner = document.querySelector('.goog-te-banner-frame');
+            if (banner) banner.style.display = 'none';
+            document.body.style.top = '0px';
+            document.body.style.position = 'static';
         }
         
-        /* ===== RTL (Right-to-Left) Support for Persian/Farsi and Pashto ===== */
+        // Keep checking and removing the banner
+        setInterval(removeGoogleBanner, 100);
+        window.addEventListener('load', removeGoogleBanner);
+    </script>
+    <script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+    
+    <!-- RTL Support + Hide Google Translate UI -->
+    <style>
+        /* ===== COMPLETELY HIDE GOOGLE TRANSLATE UI ===== */
+        .goog-te-banner-frame,
+        .goog-te-balloon-frame,
+        #goog-gt-tt,
+        .goog-te-menu-frame,
+        .goog-te-menu2,
+        .goog-te-menu-value,
+        .goog-te-gadget-icon,
+        .goog-te-gadget-simple,
+        .goog-te-gadget,
+        #google_translate_element,
+        .skiptranslate,
+        .goog-tooltip,
+        .goog-tooltip:hover,
+        .goog-text-highlight {
+            display: none !important;
+            visibility: hidden !important;
+            height: 0 !important;
+            width: 0 !important;
+            overflow: hidden !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }
+        
+        body {
+            top: 0 !important;
+            position: static !important;
+        }
+        
+        html {
+            margin-top: 0 !important;
+        }
+        
+        /* Hide iframe banner */
+        iframe.goog-te-banner-frame {
+            display: none !important;
+            height: 0 !important;
+            visibility: hidden !important;
+        }
+        
+        /* Remove translation highlighting */
+        .goog-text-highlight {
+            background-color: transparent !important;
+            box-shadow: none !important;
+        }
+        
+        /* ===== RTL (Right-to-Left) Support for Persian/Farsi and Pashto ===== */ */
         /* Base RTL direction and font */
         [dir="rtl"] {
             font-family: 'Vazirmatn', 'Inter', system-ui, sans-serif;
@@ -1378,6 +1468,9 @@ document.addEventListener('DOMContentLoaded', function() {
             to { opacity: 1; transform: translateX(0); }
         }
     </style>
+    
+    <!-- Hidden Google Translate Element -->
+    <div id="google_translate_element"></div>
     
 </body>
 </html>
