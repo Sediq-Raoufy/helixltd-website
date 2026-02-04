@@ -170,8 +170,8 @@
             </div>
             
             <!-- Mobile Menu Button -->
-            <button id="mobile-menu-button" class="mobile-menu-btn lg:hidden p-2 rounded-lg text-gray-700 hover:text-orange-500 transition">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <button id="mobile-menu-button" onclick="toggleMobileMenu()" class="mobile-menu-btn lg:hidden p-2 rounded-lg text-gray-700 hover:text-orange-500 transition">
+                <svg id="menu-icon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
                 </svg>
             </button>
@@ -217,6 +217,19 @@
 </style>
 
 <script>
+// Mobile Menu Toggle Function - standalone for onclick
+function toggleMobileMenu() {
+    const mobileMenu = document.getElementById('mobile-menu');
+    const menuIcon = document.getElementById('menu-icon');
+    if (mobileMenu.classList.contains('hidden')) {
+        mobileMenu.classList.remove('hidden');
+        if (menuIcon) menuIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>';
+    } else {
+        mobileMenu.classList.add('hidden');
+        if (menuIcon) menuIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>';
+    }
+}
+
 // Navbar functionality
 document.addEventListener('DOMContentLoaded', function() {
     // Mobile Menu Toggle
