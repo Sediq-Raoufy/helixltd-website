@@ -840,24 +840,43 @@ document.addEventListener('DOMContentLoaded', function() {
             // Show loader
             showTranslationLoader();
             
+            // Set the googtrans cookie
             if (langCode === 'en') {
-                // For English, clear cookies and go to original site
+                // Clear Google Translate cookies for English
                 document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
                 document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=' + window.location.hostname;
                 document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.' + window.location.hostname;
-                
-                // Remove any translate frame and reload
-                if (window.location.hostname.includes('translate.goog')) {
-                    window.location.href = 'https://helixltd.co/services.html';
+            } else {
+                // Set cookie for target language
+                document.cookie = 'googtrans=/en/' + googleLang + '; path=/';
+                document.cookie = 'googtrans=/en/' + googleLang + '; path=/; domain=.' + window.location.hostname;
+            }
+            
+            // Try to use the Google Translate widget dropdown
+            const tryTranslate = function(attempts) {
+                const select = document.querySelector('.goog-te-combo');
+                if (select) {
+                    if (langCode === 'en') {
+                        select.value = '';
+                        select.dispatchEvent(new Event('change', { bubbles: true }));
+                        setTimeout(function() {
+                            hideTranslationLoader();
+                            window.location.reload();
+                        }, 500);
+                    } else {
+                        select.value = googleLang;
+                        select.dispatchEvent(new Event('change', { bubbles: true }));
+                        setTimeout(hideTranslationLoader, 1500);
+                    }
+                } else if (attempts < 30) {
+                    setTimeout(function() { tryTranslate(attempts + 1); }, 200);
                 } else {
+                    hideTranslationLoader();
                     window.location.reload();
                 }
-            } else {
-                // Use Google Translate's URL-based translation (more reliable than widget)
-                const currentPage = window.location.href;
-                const translateUrl = 'https://translate.google.com/translate?sl=en&tl=' + googleLang + '&u=' + encodeURIComponent(currentPage);
-                window.location.href = translateUrl;
-            }
+            };
+            
+            tryTranslate(0);
         }
         
         // Update the language button display
@@ -948,16 +967,20 @@ document.addEventListener('DOMContentLoaded', function() {
             opacity: 1;
         }
         
-        /* ===== Hide Google Translate UI ===== */
-        .goog-te-banner-frame, .goog-te-balloon-frame { display: none !important; }
+        /* ===== Hide Google Translate UI Completely ===== */
+        .goog-te-banner-frame, .goog-te-balloon-frame { display: none !important; height: 0 !important; }
         .goog-te-gadget { display: none !important; }
-        #google_translate_element { display: none !important; }
-        body { top: 0 !important; }
-        .skiptranslate { display: none !important; }
+        #google_translate_element { display: none !important; height: 0 !important; visibility: hidden !important; }
+        body { top: 0 !important; position: static !important; }
+        html { margin-top: 0 !important; }
+        .skiptranslate { display: none !important; height: 0 !important; visibility: hidden !important; }
         body > .skiptranslate { display: none !important; }
         .goog-tooltip { display: none !important; }
         .goog-tooltip:hover { display: none !important; }
         .goog-text-highlight { background-color: transparent !important; box-shadow: none !important; }
+        iframe.goog-te-banner-frame { display: none !important; height: 0 !important; visibility: hidden !important; }
+        #goog-gt-tt, .goog-te-balloon-frame { display: none !important; }
+        .goog-te-menu-frame { display: none !important; }
         
         /* ===== RTL (Right-to-Left) Support for Persian/Farsi and Pashto ===== */
         /* Base RTL direction and font */
