@@ -814,6 +814,10 @@ document.addEventListener('DOMContentLoaded', function() {
             // Save language preference
             localStorage.setItem('helixLang', langCode);
             
+            // Map language codes to Google Translate format
+            const langMap = { 'en': 'en', 'fa': 'fa', 'ps': 'ps', 'zh': 'zh-CN' };
+            const googleLang = langMap[langCode] || langCode;
+            
             // RTL languages (Persian/Farsi and Pashto use Arabic script - right to left)
             const rtlLanguages = ['fa', 'ps'];
             const isRTL = rtlLanguages.includes(langCode);
@@ -833,45 +837,23 @@ document.addEventListener('DOMContentLoaded', function() {
             // Update UI immediately
             updateLanguageUI(langCode);
             
-            // If switching to English, reset translation
+            // Set Google Translate cookie and reload
             if (langCode === 'en') {
                 // Clear Google Translate cookies
                 document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
                 document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=' + window.location.hostname;
                 document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.' + window.location.hostname;
-                
-                // Reload page to reset to English
-                window.location.reload();
-                return;
+            } else {
+                // Set the googtrans cookie for the selected language
+                const expiry = new Date();
+                expiry.setFullYear(expiry.getFullYear() + 1);
+                document.cookie = 'googtrans=/en/' + googleLang + '; expires=' + expiry.toUTCString() + '; path=/';
+                document.cookie = 'googtrans=/en/' + googleLang + '; expires=' + expiry.toUTCString() + '; path=/; domain=' + window.location.hostname;
             }
             
-            // Check if Google Translate is loaded
-            if (!window.googleTranslateLoaded) {
-                console.warn('Google Translate not loaded yet, attempting to wait...');
-                showTranslationLoader();
-                
-                // Wait for Google Translate to load
-                let waitAttempts = 0;
-                const waitForGT = setInterval(function() {
-                    waitAttempts++;
-                    if (window.googleTranslateLoaded || waitAttempts > 30) {
-                        clearInterval(waitForGT);
-                        if (window.googleTranslateLoaded) {
-                            applyGoogleTranslate(langCode);
-                        } else {
-                            hideTranslationLoader();
-                            alert('Translation service is not available. Please check your internet connection and try again.');
-                        }
-                    }
-                }, 200);
-                return;
-            }
-            
-            // Show loader for non-English languages
+            // Reload page to apply translation
             showTranslationLoader();
-            
-            // Apply Google Translate
-            applyGoogleTranslate(langCode);
+            window.location.reload();
         }
         
         // Update the language button display
